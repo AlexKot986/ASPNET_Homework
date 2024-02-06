@@ -1,4 +1,9 @@
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+using StoreMarket.Abstroctions;
 using StoreMarket.Contexts;
+using StoreMarket.Mappers;
+using StoreMarket.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +13,20 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+
+builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
+
+builder.Host.ConfigureContainer<ContainerBuilder>(container => container.RegisterType<ProductServices>()
+                                                                        .As<IProductServices>());
+
+builder.Services.AddMemoryCache(m => m.TrackStatistics = true);
+
+
+
+
 
 var app = builder.Build();
 

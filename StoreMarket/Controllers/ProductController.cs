@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using StoreMarket.Contexts;
+using StoreMarket.Abstroctions;
 using StoreMarket.Contracts.Requests;
 using StoreMarket.Contracts.Responses;
-using StoreMarket.Models;
+using System.Text;
 
 namespace StoreMarket.Controllers
 {
@@ -10,95 +10,95 @@ namespace StoreMarket.Controllers
     [Route("[controller]")]
     public class ProductController : ControllerBase
     {
-        private StoreContext storeContext;
-        public ProductController(StoreContext context)
+        private readonly IProductServices _productServices;
+        public ProductController(IProductServices productServices)
         {
-            storeContext = context;
+            _productServices = productServices;
         }
 
-        [HttpGet]
-        [Route("product/{id}")]
-
+        [HttpGet(template: "GetProduct/{id}")]
         public ActionResult<ProductResponse> GetProduct(int id)
         {
-            var result = storeContext.Products.FirstOrDefault(p => p.Id == id);
+            var result = _productServices.GetProductId(id);
             if (result == null)
             {
                 return NotFound();
             }
-            else
-            {
-                return Ok(new ProductResponse(result));
-            }
-
+            return Ok(result);
         }
 
 
-        [HttpGet]
-        [Route("products")]
-
+        [HttpGet(template: "GetProducts")]
         public ActionResult<IEnumerable<ProductResponse>> GetProducts()
         {
-            var result = storeContext.Products;
+            var result = _productServices.GetProducts();
 
-            return Ok(result.Select(result => new ProductResponse(result)));
+            return Ok(result);
         }
 
-        [HttpPost]
-        [Route("product")]
-
-        public ActionResult<ProductResponse> AddProduct(ProductCreateRequest request)
+        [HttpPost(template: "AddProduct")]
+        public ActionResult<int> AddProduct(ProductCreateRequest request)
         {
-            Product product = request.ProductGetEntity();
             try
             {
-                var result = storeContext.Products.Add(product).Entity;
-
-                storeContext.SaveChanges();
-                return Ok(new ProductResponse(result));
+                var id = _productServices.AddProduct(request);
+                return Ok(id);
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
-
         }
 
-        [HttpDelete]
-        [Route("product/{id}")]
-
+        [HttpDelete(template: "DeleteProduct/{id}")]
         public ActionResult<ProductResponse> DeleteProduct(int id)
         {
-            var result = storeContext.Products.FirstOrDefault(p => p.Id == id);
-            if (result == null)
+            var product = _productServices.DeleteProduct(id);
+            if (product != null)
             {
-                return NotFound();
+                return Ok(product);
             }
             else
-            {
-                storeContext.Products.Remove(result);
-                storeContext.SaveChanges();
-                return Ok();
-            }
-
+                return NotFound();
         }
 
-        [HttpPut]
-        [Route("product/{id}")]
+
+        [HttpPut(template: "UpdateProduct")]
         public ActionResult<ProductResponse> UpdateProduct(int id, ProductUpdateRequest request)
         {
-
-            Product product = request.ProductGetEntity(id);
             try
             {
-                var result = storeContext.Products.Update(product).Entity;
-                storeContext.SaveChanges();
-                return Ok(new ProductResponse(result));
+                var product = _productServices.UpdateProduct(id, request);
+                return product;
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+
+
+        [HttpGet(template: "GetProductsCSV")]
+        public FileContentResult GetProductsCSV()
+        {
+            var result = GetCsv(_productServices.GetProducts());
+
+            return File(new System.Text.UTF8Encoding().GetBytes(result), "txt/csv", "report.csv");
+        }
+
+        private string GetCsv(IEnumerable<ProductResponse> products)
+        {
+            StringBuilder stringBuilder = new StringBuilder();
+
+            foreach (var product in products)
+            {
+                stringBuilder.AppendLine(product.Id + ";" +
+                                         product.Name + ";" +
+                                         product.Description + ";" +
+                                         product.CategoryId + "\n");
+            }
+            return stringBuilder.ToString();
         }
     }
 }

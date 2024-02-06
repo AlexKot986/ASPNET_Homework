@@ -10,15 +10,15 @@ namespace StoreMarket.Contracts.Responses
         public decimal Price { get; set; } = decimal.Zero;
         public int? CategoryId { get; set; }
 
-        public ProductResponse(Product product)
-        {
-            Id = product.Id;
-            Name = product.Name;
-            Description = product.Description;
-            Price = product.Price;
-            CategoryId = product.CategoryId;
+        //public ProductResponse(Product product)
+        //{
+        //    Id = product.Id;
+        //    Name = product.Name;
+        //    Description = product.Description;
+        //    Price = product.Price;
+        //    CategoryId = product.CategoryId;
 
-        }
+        //}
 
     }
 }
